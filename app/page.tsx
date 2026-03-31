@@ -210,7 +210,7 @@ export default function Home() {
       <header className="border-b border-zinc-900 sticky top-0 z-10 bg-black/90 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-white font-bold text-lg tracking-tight">RiskPatch</span>
+            <span className="text-amber-400 font-bold text-lg tracking-tight">RiskPatch</span>
             <span className="text-zinc-700 text-sm">|</span>
             <span className="text-zinc-500 text-sm">게임 기획 리스크 진단</span>
           </div>
