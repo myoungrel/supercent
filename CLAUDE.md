@@ -1,15 +1,19 @@
 # Game Risk Patcher (RiskPatch) - 하이퍼캐주얼 게임 기획 리스크 사전 진단 도구
 
 ## 프로젝트 개요
-플레이스토어 저평점 리뷰를 RAG로 분석해, 하이퍼캐주얼 게임 기획 단계에서
-예상 불만 요소를 사전 탐지하는 AI 리서치 도구.
-슈퍼센트 AI Application Engineer 과제 제출용 프로토타입.
+플레이스토어 저평점 리뷰 데이터를 RAG로 구조화하여, 게임 기획 단계에서
+유사 불만 패턴을 자동 탐지하는 AI 리서치 도구의 프로토타입.
+
+**프로토타입 검증 목표**
+1. RAG 검색 정확도 - 기획안 특성과 실제 불만 패턴이 의미적으로 잘 매칭되는지
+2. 리스크 리포트 품질 - 실제 리뷰 근거 기반으로 실용적인 기획 보완 제안이 나오는지
+3. 파이프라인 재현성 - 새 게임 데이터도 동일한 흐름으로 처리 가능한지
 
 ## 기술 스택
 - **프론트엔드**: Next.js 14 (App Router)
 - **벡터DB**: Supabase pgvector
 - **LLM**: Claude API (claude-sonnet-4-6)
-- **임베딩**: OpenAI text-embedding-3-small
+- **임베딩**: Voyage AI voyage-3 (1024차원)
 - **데이터 파이프라인**: Python (스크래핑 + 전처리)
 - **스타일**: Tailwind CSS
 
@@ -83,7 +87,7 @@ supercent_project/
 ## 환경변수 (.env.local)
 ```
 ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
+VOYAGE_API_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
