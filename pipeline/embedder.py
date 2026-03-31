@@ -18,7 +18,7 @@
 #   complaint_type text,
 #   detail      text,
 #   original_review text,
-#   embedding   vector(1536),
+#   embedding   vector(1024),
 #   created_at  timestamptz default now()
 # );
 #
@@ -27,7 +27,7 @@
 #   with (lists = 100);
 #
 # create or replace function match_complaints(
-#   query_embedding vector(1536),
+#   query_embedding vector(1024),
 #   match_threshold float,
 #   match_count int
 # )
@@ -57,7 +57,7 @@ import os
 import time
 from pathlib import Path
 
-import openai
+import voyageai
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -74,12 +74,12 @@ DATA_DIR = _script_dir / "data"
 INPUT_FILE = DATA_DIR / "structured_complaints.json"
 
 # 설정
-EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_MODEL = "voyage-3"  # 1024차원, 무료 200M 토큰
 BATCH_SIZE = 20
-SLEEP_BETWEEN_REQUESTS = 0.5
+SLEEP_BETWEEN_REQUESTS = 0.3
 
-# OpenAI 클라이언트
-openai_client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+# Voyage AI 클라이언트
+voyage_client = voyageai.Client(api_key=os.environ["VOYAGE_API_KEY"])
 
 # Supabase 클라이언트
 supabase: Client = create_client(
@@ -88,13 +88,10 @@ supabase: Client = create_client(
 )
 
 
-def get_embedding(text: str) -> list[float]:
-    """텍스트를 임베딩 벡터로 변환한다."""
-    response = openai_client.embeddings.create(
-        input=text,
-        model=EMBEDDING_MODEL,
-    )
-    return response.data[0].embedding
+def get_embeddings(texts: list[str]) -> list[list[float]]:
+    """텍스트 배치를 임베딩 벡터로 변환한다."""
+    result = voyage_client.embed(texts, model=EMBEDDING_MODEL, input_type="document")
+    return result.embeddings
 
 
 def upsert_batch(records: list[dict]) -> int:
@@ -119,43 +116,44 @@ def main():
     print(f"구조화된 불만 패턴 총 {len(complaints)}건 로드 완료")
 
     total_saved = 0
-    batch = []
+    items_buffer = []
+    records_buffer = []
 
     for i, item in enumerate(complaints, 1):
         detail = item.get("detail", "")
         if not detail:
             continue
 
-        try:
-            embedding = get_embedding(detail)
+        items_buffer.append(item)
 
-            record = {
-                "game": item.get("game", ""),
-                "genre": item.get("genre", "하이퍼캐주얼"),
-                "complaint_type": item.get("complaint_type", ""),
-                "detail": detail,
-                "original_review": item.get("original_review", ""),
-                "embedding": embedding,
-            }
-            batch.append(record)
+        # 배치가 꽉 찼거나 마지막이면 임베딩 + upsert
+        if len(items_buffer) >= BATCH_SIZE or i == len(complaints):
+            try:
+                texts = [it.get("detail", "") for it in items_buffer]
+                embeddings = get_embeddings(texts)
 
-        except Exception as e:
-            print(f"  임베딩 오류 ({item.get('game', '')}): {e}")
-            continue
+                for it, emb in zip(items_buffer, embeddings):
+                    records_buffer.append({
+                        "game": it.get("game", ""),
+                        "genre": it.get("genre", "하이퍼캐주얼"),
+                        "complaint_type": it.get("complaint_type", ""),
+                        "detail": it.get("detail", ""),
+                        "original_review": it.get("original_review", ""),
+                        "embedding": emb,
+                    })
 
-        # 배치가 꽉 찼으면 upsert
-        if len(batch) >= BATCH_SIZE:
-            saved = upsert_batch(batch)
-            total_saved += saved
-            print(f"  진행: {i}/{len(complaints)} | 저장 완료: {total_saved}건")
-            batch = []
+                saved = upsert_batch(records_buffer)
+                total_saved += saved
+                print(f"  진행: {i}/{len(complaints)} | 저장 완료: {total_saved}건")
 
-        time.sleep(SLEEP_BETWEEN_REQUESTS)
+                items_buffer = []
+                records_buffer = []
+                time.sleep(SLEEP_BETWEEN_REQUESTS)
 
-    # 남은 배치 처리
-    if batch:
-        saved = upsert_batch(batch)
-        total_saved += saved
+            except Exception as e:
+                print(f"  임베딩 오류: {e}")
+                items_buffer = []
+                records_buffer = []
 
     print(f"\n임베딩 및 저장 완료!")
     print(f"  처리 건수: {len(complaints)}건")
