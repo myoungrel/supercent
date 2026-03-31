@@ -256,8 +256,8 @@ export default function Home() {
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing || !designDoc.trim()}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-black text-sm font-semibold
-                hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-amber-400 text-black text-sm font-semibold
+                hover:bg-amber-300 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed
                 transition-all active:scale-95"
             >
               {isAnalyzing ? (
@@ -283,7 +283,7 @@ export default function Home() {
                     {step.status === "done" ? (
                       <span className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center text-xs text-white">✓</span>
                     ) : step.status === "loading" ? (
-                      <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin block" />
+                      <span className="h-4 w-4 rounded-full border-2 border-black border-t-transparent animate-spin block" />
                     ) : step.status === "error" ? (
                       <span className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">✕</span>
                     ) : (
@@ -291,7 +291,7 @@ export default function Home() {
                     )}
                     <span className={`text-xs ${
                       step.status === "done" ? "text-emerald-400"
-                      : step.status === "loading" ? "text-white"
+                      : step.status === "loading" ? "text-amber-400"
                       : step.status === "error" ? "text-red-400"
                       : "text-zinc-700"
                     }`}>
