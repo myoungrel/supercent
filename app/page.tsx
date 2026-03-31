@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { AnalyzeResponse, GameFeatures } from "./api/analyze/route";
 import type { ComplaintResult } from "@/lib/supabase";
 
-// 분석 단계 상태
 type StepStatus = "pending" | "loading" | "done" | "error";
 
 interface AnalysisStep {
@@ -14,9 +13,9 @@ interface AnalysisStep {
 }
 
 const INITIAL_STEPS: AnalysisStep[] = [
-  { id: 1, label: "기획안 구조화 중...", status: "pending" },
-  { id: 2, label: "유사 불만 패턴 검색 중...", status: "pending" },
-  { id: 3, label: "리스크 리포트 생성 중...", status: "pending" },
+  { id: 1, label: "기획안 구조화", status: "pending" },
+  { id: 2, label: "불만 패턴 검색", status: "pending" },
+  { id: 3, label: "리스크 리포트 생성", status: "pending" },
 ];
 
 const SAMPLE_DESIGN_DOC = `게임명: 스택 러시 (Stack Rush)
@@ -46,7 +45,6 @@ const SAMPLE_DESIGN_DOC = `게임명: 스택 러시 (Stack Rush)
 - 31스테이지 이후: 고난이도, 타이밍 패턴 복잡
 - 보스 구간: 매 10스테이지마다 등장, 실패 시 처음부터`;
 
-// 위험도별 색상/아이콘 파싱 헬퍼
 function parseReportSections(report: string) {
   const sections = {
     high: [] as string[],
@@ -57,8 +55,7 @@ function parseReportSections(report: string) {
   };
 
   const lines = report.split("\n");
-  let currentSection: "high" | "medium" | "low" | "summary" | "header" | null =
-    "header";
+  let currentSection: "high" | "medium" | "low" | "summary" | "header" | null = "header";
   let buffer: string[] = [];
 
   const flush = () => {
@@ -74,23 +71,10 @@ function parseReportSections(report: string) {
   };
 
   for (const line of lines) {
-    if (line.includes("🔴")) {
-      flush();
-      currentSection = "high";
-      continue;
-    } else if (line.includes("🟡")) {
-      flush();
-      currentSection = "medium";
-      continue;
-    } else if (line.includes("🟢")) {
-      flush();
-      currentSection = "low";
-      continue;
-    } else if (line.includes("**종합 의견**") || line.includes("종합 의견")) {
-      flush();
-      currentSection = "summary";
-      continue;
-    }
+    if (line.includes("🔴")) { flush(); currentSection = "high"; continue; }
+    else if (line.includes("🟡")) { flush(); currentSection = "medium"; continue; }
+    else if (line.includes("🟢")) { flush(); currentSection = "low"; continue; }
+    else if (line.includes("종합 의견")) { flush(); currentSection = "summary"; continue; }
     buffer.push(line);
   }
   flush();
@@ -98,95 +82,61 @@ function parseReportSections(report: string) {
   return sections;
 }
 
-// 단계 아이콘
-function StepIcon({ status }: { status: StepStatus }) {
-  if (status === "done")
-    return (
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-bold">
-        ✓
-      </span>
-    );
-  if (status === "loading")
-    return (
-      <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
-    );
-  if (status === "error")
-    return (
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
-        ✕
-      </span>
-    );
-  return (
-    <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-slate-600 text-slate-600 text-xs">
-      ○
-    </span>
-  );
-}
-
-// 불만 패턴 카드
 function RagResultCard({ result }: { result: ComplaintResult }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
+    <div className="border border-zinc-800 bg-zinc-900 rounded-xl p-4 hover:border-zinc-600 transition-colors">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-medium text-amber-400 tracking-widest uppercase">
           {result.complaint_type}
         </span>
-        <span className="text-xs text-slate-400">
-          유사도 {(result.similarity * 100).toFixed(1)}%
+        <span className="text-xs text-zinc-500">
+          {(result.similarity * 100).toFixed(1)}% 유사
         </span>
       </div>
-      <p className="text-sm text-slate-300 leading-relaxed">{result.detail}</p>
+      <p className="text-sm text-zinc-300 leading-relaxed">{result.detail}</p>
       {result.original_review && (
-        <p className="mt-2 text-xs text-slate-400 italic border-l-2 border-slate-600 pl-2 leading-relaxed">
-          "{result.original_review}"
+        <p className="mt-3 text-xs text-zinc-500 italic border-l-2 border-zinc-700 pl-3 leading-relaxed">
+          {result.original_review}
         </p>
       )}
-      <p className="mt-1 text-xs text-slate-500">출처: {result.game}</p>
+      <p className="mt-3 text-xs text-zinc-600">{result.game}</p>
     </div>
   );
 }
 
-// 리스크 섹션 카드
 function RiskSection({
-  level,
-  icon,
-  colorClass,
-  borderClass,
-  items,
+  level, dot, textColor, items,
 }: {
   level: string;
-  icon: string;
-  colorClass: string;
-  borderClass: string;
+  dot: string;
+  textColor: string;
   items: string[];
 }) {
   if (items.length === 0) return null;
   return (
-    <div className={`rounded-xl border ${borderClass} bg-slate-800/50 p-5`}>
-      <h3 className={`text-base font-bold mb-3 ${colorClass}`}>
-        {icon} 위험도 {level}
-      </h3>
+    <div className="border border-zinc-800 rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className={`h-2 w-2 rounded-full ${dot}`} />
+        <h3 className={`text-sm font-semibold tracking-wide ${textColor}`}>
+          위험도 {level}
+        </h3>
+      </div>
       <div className="space-y-4">
         {items.map((item, i) => (
-          <div key={i} className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+          <p key={i} className="text-sm text-zinc-400 whitespace-pre-wrap leading-relaxed">
             {item}
-          </div>
+          </p>
         ))}
       </div>
     </div>
   );
 }
 
-// 특성 배지
 function FeatureBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-lg bg-slate-800 border border-slate-700 px-4 py-3 min-w-0">
-      <span className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-        {label}
-      </span>
-      <span className="text-sm text-slate-200 font-semibold truncate" title={value}>
-        {value}
-      </span>
+    <div className="border border-zinc-800 rounded-lg px-4 py-3">
+      <p className="text-xs text-zinc-600 uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-sm text-zinc-200 font-medium truncate" title={value}>{value}</p>
     </div>
   );
 }
@@ -199,11 +149,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const updateStep = (id: number, status: StepStatus) => {
-    setSteps((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status } : s))
-    );
-  };
+  const updateStep = (id: number, status: StepStatus) =>
+    setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
 
   const resetSteps = () => setSteps(INITIAL_STEPS.map((s) => ({ ...s })));
 
@@ -213,22 +160,11 @@ export default function Home() {
     setError(null);
     setResult(null);
     resetSteps();
-
-    // 단계 1 시작
     updateStep(1, "loading");
 
     try {
-      // 단계 표시를 위한 타임아웃 시뮬레이션 (실제 API는 하나의 호출)
-      // Step 1 → 2 → 3 순서로 UI 표시
-      const stepTimer1 = setTimeout(() => {
-        updateStep(1, "done");
-        updateStep(2, "loading");
-      }, 1200);
-
-      const stepTimer2 = setTimeout(() => {
-        updateStep(2, "done");
-        updateStep(3, "loading");
-      }, 3000);
+      const t1 = setTimeout(() => { updateStep(1, "done"); updateStep(2, "loading"); }, 1200);
+      const t2 = setTimeout(() => { updateStep(2, "done"); updateStep(3, "loading"); }, 3000);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -236,8 +172,8 @@ export default function Home() {
         body: JSON.stringify({ designDoc: designDoc.trim() }),
       });
 
-      clearTimeout(stepTimer1);
-      clearTimeout(stepTimer2);
+      clearTimeout(t1);
+      clearTimeout(t2);
 
       if (!response.ok) {
         const errData = (await response.json()) as { error?: string };
@@ -245,17 +181,13 @@ export default function Home() {
       }
 
       const data = (await response.json()) as AnalyzeResponse;
-
-      // 성공 시 모든 단계 완료
       setSteps(INITIAL_STEPS.map((s) => ({ ...s, status: "done" as StepStatus })));
       setResult(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : "알 수 없는 오류";
       setError(message);
       setSteps((prev) =>
-        prev.map((s) =>
-          s.status === "loading" ? { ...s, status: "error" } : s
-        )
+        prev.map((s) => s.status === "loading" ? { ...s, status: "error" } : s)
       );
     } finally {
       setIsAnalyzing(false);
@@ -273,166 +205,135 @@ export default function Home() {
   const features: GameFeatures | null = result?.features ?? null;
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-black text-white">
       {/* 헤더 */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Game Risk Patcher
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              하이퍼캐주얼 게임 기획 리스크 진단 도구 · Powered by RAG + Claude
-            </p>
+      <header className="border-b border-zinc-900 sticky top-0 z-10 bg-black/90 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-white font-bold text-lg tracking-tight">RiskPatch</span>
+            <span className="text-zinc-700 text-sm">|</span>
+            <span className="text-zinc-500 text-sm">게임 기획 리스크 진단</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-slate-400">RAG 시스템 연결됨</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs text-zinc-600">RAG 연결됨</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-10 space-y-8">
+      <main className="max-w-4xl mx-auto px-6 py-12 space-y-6">
+        {/* 히어로 */}
+        <div className="py-8">
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+            게임 기획안 리스크 분석
+          </h1>
+          <p className="text-zinc-500 text-base leading-relaxed">
+            실제 플레이스토어 저평점 리뷰 데이터를 기반으로 기획안의 잠재적 불만 요소를 사전에 탐지합니다.
+          </p>
+        </div>
+
         {/* 입력 섹션 */}
-        <section className="rounded-2xl border border-slate-700 bg-slate-800/50 p-6">
+        <div className="border border-zinc-800 rounded-2xl p-6 bg-zinc-950">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">게임 기획안 입력</h2>
+            <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-widest">기획안 입력</h2>
             <button
               onClick={() => setDesignDoc(SAMPLE_DESIGN_DOC)}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors border border-blue-400/30 hover:border-blue-400/60 rounded-md px-3 py-1"
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
             >
-              샘플 기획안 불러오기
+              샘플 불러오기 →
             </button>
           </div>
           <textarea
             value={designDoc}
             onChange={(e) => setDesignDoc(e.target.value)}
-            placeholder="게임 기획안을 입력하세요.&#10;&#10;예시) 장르, 조작방식, 광고 구조, 보상 체계, 난이도 흐름 등을 포함하면&#10;더 정확한 리스크 분석이 가능합니다."
-            className="w-full h-52 bg-slate-900 border border-slate-600 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-500
-              resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all
-              font-mono leading-relaxed"
+            placeholder="장르, 조작방식, 광고 구조, 보상 체계, 난이도 흐름 등을 포함하면 더 정확한 분석이 가능합니다."
+            className="w-full h-48 bg-black border border-zinc-800 rounded-xl p-4 text-sm text-zinc-300 placeholder-zinc-700
+              resize-none focus:outline-none focus:border-zinc-600 transition-colors leading-relaxed"
             disabled={isAnalyzing}
           />
           <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-slate-500">
-              {designDoc.length.toLocaleString()}자 입력됨
-            </span>
+            <span className="text-xs text-zinc-700">{designDoc.length.toLocaleString()}자</span>
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing || !designDoc.trim()}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500
-                disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed
-                text-white font-semibold text-sm transition-all active:scale-95"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-white text-black text-sm font-semibold
+                hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed
+                transition-all active:scale-95"
             >
               {isAnalyzing ? (
                 <>
-                  <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  분석 중...
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                  분석 중
                 </>
               ) : (
-                <>
-                  <span>⚡</span>
-                  리스크 분석 시작
-                </>
+                "리스크 분석 시작"
               )}
             </button>
           </div>
-        </section>
+        </div>
 
-        {/* 분석 단계 표시 */}
+        {/* 분석 단계 */}
         {(isAnalyzing || steps.some((s) => s.status !== "pending")) && (
-          <section className="rounded-2xl border border-slate-700 bg-slate-800/30 p-5">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-              분석 진행 상태
-            </h2>
-            <div className="space-y-3">
-              {steps.map((step) => (
+          <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
+            <div className="flex items-center gap-8">
+              {steps.map((step, i) => (
                 <div key={step.id} className="flex items-center gap-3">
-                  <StepIcon status={step.status} />
-                  <span
-                    className={`text-sm ${
-                      step.status === "done"
-                        ? "text-emerald-400"
-                        : step.status === "loading"
-                        ? "text-blue-400 animate-pulse-soft"
-                        : step.status === "error"
-                        ? "text-red-400"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                  {step.status === "done" && (
-                    <span className="text-xs text-emerald-500">완료</span>
-                  )}
+                  {i > 0 && <span className="text-zinc-800 text-xs">—</span>}
+                  <div className="flex items-center gap-2">
+                    {step.status === "done" ? (
+                      <span className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center text-xs text-white">✓</span>
+                    ) : step.status === "loading" ? (
+                      <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin block" />
+                    ) : step.status === "error" ? (
+                      <span className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">✕</span>
+                    ) : (
+                      <span className="h-4 w-4 rounded-full border border-zinc-700" />
+                    )}
+                    <span className={`text-xs ${
+                      step.status === "done" ? "text-emerald-400"
+                      : step.status === "loading" ? "text-white"
+                      : step.status === "error" ? "text-red-400"
+                      : "text-zinc-700"
+                    }`}>
+                      {step.label}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
         )}
 
-        {/* 에러 메시지 */}
+        {/* 에러 */}
         {error && (
-          <section className="rounded-2xl border border-red-800/50 bg-red-950/30 p-5">
-            <div className="flex items-start gap-3">
-              <span className="text-red-400 text-lg">⚠</span>
-              <div>
-                <h3 className="text-sm font-semibold text-red-400 mb-1">분석 중 오류 발생</h3>
-                <p className="text-sm text-red-300/80">{error}</p>
-                <p className="text-xs text-red-400/60 mt-2">
-                  환경변수(ANTHROPIC_API_KEY, VOYAGE_API_KEY, Supabase)가 올바르게 설정되어 있는지 확인하세요.
-                </p>
-              </div>
-            </div>
-          </section>
+          <div className="border border-red-900/50 rounded-2xl p-5 bg-red-950/20">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
         )}
 
-        {/* 결과 리포트 */}
+        {/* 결과 */}
         {result && reportSections && (
-          <section className="space-y-5">
-            {/* 헤더 및 특성 */}
-            <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-6">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-xl font-bold text-white">
-                  게임 기획 리스크 진단 리포트
-                </h2>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 text-xs px-4 py-2 rounded-lg border border-slate-600
-                    hover:border-slate-400 text-slate-400 hover:text-slate-200 transition-all"
-                >
-                  {copied ? (
-                    <>
-                      <span className="text-emerald-400">✓</span>
-                      복사됨
-                    </>
-                  ) : (
-                    <>
-                      <span>📋</span>
-                      리포트 복사
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* 기획 특성 배지 */}
-              {features && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-2">
+          <div className="space-y-4">
+            {/* 기획 특성 */}
+            {features && (
+              <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
+                <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest mb-4">분석된 기획 특성</h2>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <FeatureBadge label="장르" value={features.genre} />
                   <FeatureBadge label="조작방식" value={features.control} />
                   <FeatureBadge label="광고구조" value={features.ad_structure} />
                   <FeatureBadge label="보상구조" value={features.reward_structure} />
-                  <FeatureBadge label="난이도흐름" value={features.difficulty} />
+                  <FeatureBadge label="난이도" value={features.difficulty} />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* RAG 검색 결과 */}
+            {/* RAG 결과 */}
             {result.ragResults && result.ragResults.length > 0 && (
-              <div className="rounded-2xl border border-slate-700 bg-slate-800/30 p-6">
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                  유사 게임 불만 패턴 (RAG 검색 결과 · {result.ragResults.length}건)
-                </h3>
+              <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
+                <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest mb-4">
+                  유사 불만 패턴 · {result.ragResults.length}건
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {result.ragResults.map((r, i) => (
                     <RagResultCard key={i} result={r} />
@@ -441,72 +342,45 @@ export default function Home() {
               </div>
             )}
 
-            {result.ragResults && result.ragResults.length === 0 && (
-              <div className="rounded-2xl border border-slate-700 bg-slate-800/30 p-5">
-                <p className="text-sm text-slate-500 text-center">
-                  유사도 0.7 이상의 불만 패턴이 검색되지 않았습니다.
-                  데이터베이스에 관련 데이터가 없거나 기획안이 충분히 구체적이지 않을 수 있습니다.
-                </p>
+            {/* 리스크 리포트 */}
+            <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest">리스크 리포트</h2>
+                <button
+                  onClick={handleCopy}
+                  className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors"
+                >
+                  {copied ? "복사됨 ✓" : "복사"}
+                </button>
               </div>
-            )}
-
-            {/* 위험도별 리스크 카드 */}
-            <RiskSection
-              level="높음"
-              icon="🔴"
-              colorClass="text-red-400"
-              borderClass="border-red-900/50"
-              items={reportSections.high}
-            />
-            <RiskSection
-              level="중간"
-              icon="🟡"
-              colorClass="text-yellow-400"
-              borderClass="border-yellow-900/50"
-              items={reportSections.medium}
-            />
-            <RiskSection
-              level="낮음"
-              icon="🟢"
-              colorClass="text-emerald-400"
-              borderClass="border-emerald-900/50"
-              items={reportSections.low}
-            />
-
-            {/* 종합 의견 */}
-            {reportSections.summary && (
-              <div className="rounded-2xl border border-blue-900/40 bg-blue-950/20 p-6">
-                <h3 className="text-base font-bold text-blue-400 mb-3">
-                  종합 의견
-                </h3>
-                <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
-                  {reportSections.summary}
-                </p>
+              <div className="space-y-4">
+                <RiskSection level="높음" dot="bg-red-500" textColor="text-red-400" items={reportSections.high} />
+                <RiskSection level="중간" dot="bg-amber-400" textColor="text-amber-400" items={reportSections.medium} />
+                <RiskSection level="낮음" dot="bg-emerald-500" textColor="text-emerald-400" items={reportSections.low} />
               </div>
-            )}
 
-            {/* 원문 리포트 (fallback: 파싱이 안 된 경우) */}
-            {!reportSections.high.length &&
-              !reportSections.medium.length &&
-              !reportSections.low.length &&
-              !reportSections.summary && (
-                <div className="rounded-2xl border border-slate-700 bg-slate-800/30 p-6">
-                  <h3 className="text-sm font-semibold text-slate-400 mb-3">
-                    분석 리포트
-                  </h3>
-                  <pre className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-sans">
-                    {result.report}
-                  </pre>
+              {reportSections.summary && (
+                <div className="mt-5 pt-5 border-t border-zinc-800">
+                  <h3 className="text-xs font-medium text-zinc-600 uppercase tracking-widest mb-3">종합 의견</h3>
+                  <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                    {reportSections.summary}
+                  </p>
                 </div>
               )}
-          </section>
+
+              {!reportSections.high.length && !reportSections.medium.length &&
+               !reportSections.low.length && !reportSections.summary && (
+                <pre className="text-sm text-zinc-400 whitespace-pre-wrap leading-relaxed font-sans">
+                  {result.report}
+                </pre>
+              )}
+            </div>
+          </div>
         )}
       </main>
 
-      <footer className="border-t border-slate-800 mt-16 py-6 text-center">
-        <p className="text-xs text-slate-600">
-          Game Risk Patcher · Supercent AI Application Engineer 과제 · 슈퍼센트
-        </p>
+      <footer className="border-t border-zinc-900 mt-20 py-6 text-center">
+        <p className="text-xs text-zinc-800">RiskPatch · Supercent AI Application Engineer</p>
       </footer>
     </div>
   );
