@@ -1,0 +1,5 @@
+google-play-scraper
+anthropic
+openai
+supabase
+python-dotenv

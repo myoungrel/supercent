@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:adjoe.io)",
+      "Bash(python -c \"import json; data=json.load\\(open\\(''c:/IT/supercent_project/.claude/settings.local.json'',encoding=''utf-8''\\)\\); print\\(''OK -'', list\\(data.keys\\(\\)\\)\\)\")",
+      "Bash(python -c \":*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import sys,json,os;from datetime import datetime;d=json.loads(sys.stdin.buffer.read().decode('utf-8'));p=d.get('prompt','');l='c:/IT/supercent_project/VIBE_CODING_LOG.md';h=not os.path.exists(l);fh=open(l,'a',encoding='utf-8');h and fh.write('# 바이브코딩 지시 내용\\n\\n');ts=datetime.now().strftime('%Y-%m-%d %H:%M:%S');fh.write('### ['+ts+']\\n\\n'+p+'\\n\\n---\\n\\n');fh.close()\"",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
