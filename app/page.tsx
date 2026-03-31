@@ -125,6 +125,7 @@ function StepIcon({ status }: { status: StepStatus }) {
 
 // 불만 패턴 카드
 function RagResultCard({ result }: { result: ComplaintResult }) {
+  const [expanded, setExpanded] = useState(false);
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
       <div className="flex items-center justify-between mb-1">
@@ -137,6 +138,21 @@ function RagResultCard({ result }: { result: ComplaintResult }) {
       </div>
       <p className="text-sm text-slate-300 leading-relaxed">{result.detail}</p>
       <p className="mt-1 text-xs text-slate-500">출처: {result.game}</p>
+      {result.original_review && (
+        <div className="mt-2">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            {expanded ? "▲ 원문 접기" : "▼ 원문 보기"}
+          </button>
+          {expanded && (
+            <p className="mt-1 text-xs text-slate-400 italic border-l-2 border-slate-600 pl-2 leading-relaxed">
+              "{result.original_review}"
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

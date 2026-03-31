@@ -10,6 +10,7 @@ export interface ComplaintResult {
   game: string;
   complaint_type: string;
   detail: string;
+  original_review: string;
   similarity: number;
 }
 
