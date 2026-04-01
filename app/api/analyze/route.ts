@@ -205,7 +205,13 @@ export async function POST(request: NextRequest) {
         const embedding = await embedQuery(features.search_query);
         let ragResults: ComplaintResult[] = [];
         try {
-          ragResults = await searchComplaints(embedding, 15);
+          const raw = await searchComplaints(embedding, 30);
+          const seen = new Set<string>();
+          ragResults = raw.filter((r) => {
+            if (seen.has(r.detail)) return false;
+            seen.add(r.detail);
+            return true;
+          }).slice(0, 15);
         } catch {
           ragResults = [];
         }
