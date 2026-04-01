@@ -93,7 +93,7 @@ async function multiQuerySearch(queries: string[]): Promise<ComplaintResult[]> {
 
   // 모든 임베딩으로 병렬 검색
   const results = await Promise.allSettled(
-    embeddings.map((embedding) => searchComplaints(embedding, 10))
+    embeddings.map((embedding) => searchComplaints(embedding, 5))
   );
 
   // 결과 합치기 + detail 기준 중복 제거 + 유사도 높은 순 정렬
@@ -112,11 +112,10 @@ async function multiQuerySearch(queries: string[]): Promise<ComplaintResult[]> {
   }
 
   merged.sort((a, b) => b.similarity - a.similarity);
-  return merged.slice(0, 15);
+  return merged.slice(0, 10);
 }
 
 async function generateRiskReport(
-  designDoc: string,
   features: GameFeatures,
   ragResults: ComplaintResult[]
 ): Promise<string> {
@@ -176,14 +175,11 @@ ${ragText}
   기획 보완: 수정 방향 (1줄)
 
 **종합 의견**
-전반적 리스크 수준과 핵심 개선 포인트 (3줄 이내)
-
-기획안:
-${designDoc}`;
+전반적 리스크 수준과 핵심 개선 포인트 (3줄 이내)`;
 
   const stream = anthropic.messages.stream({
     model: "claude-sonnet-4-6",
-    max_tokens: 4096,
+    max_tokens: 2000,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -240,7 +236,7 @@ export async function POST(request: NextRequest) {
 
         // Step 3: 리포트 생성
         send("step", { step: 3, status: "loading" });
-        const report = await generateRiskReport(designDoc.trim(), features, ragResults);
+        const report = await generateRiskReport(features, ragResults);
         send("step", { step: 3, status: "done" });
 
         send("result", { features, ragResults: ragResults.slice(0, 5), report });
