@@ -277,7 +277,7 @@ export default function Home() {
             disabled={isAnalyzing}
           />
           <p className="mt-3 text-xs text-zinc-700">
-            입력된 기획안은 분석 후 서버에 저장되지 않습니다.
+            입력된 기획안은 분석 목적으로만 사용되며 별도 저장되지 않습니다. 분석에는 Claude API(Anthropic)가 사용됩니다.
           </p>
           <div className="mt-3 flex items-center justify-between">
             <span className="text-xs text-zinc-700">{designDoc.length.toLocaleString()}자</span>
