@@ -44,7 +44,7 @@ async function extractGameFeatures(designDoc: string): Promise<GameFeatures> {
   "ad_structure": "광고구조 설명",
   "reward_structure": "보상구조 설명",
   "difficulty": "난이도 흐름 설명",
-  "search_query": "RAG 검색에 최적화된 자연어 쿼리 (핵심 불만 유발 요소 중심)"
+  "search_query": "이 기획안의 요소들로 인해 유저가 실제로 남길 법한 불만 리뷰 문장 (유저 말투로, 구체적인 불만 상황 중심으로 작성)"
 }
 
 기획안:
