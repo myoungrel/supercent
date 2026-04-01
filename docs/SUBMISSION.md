@@ -1,206 +1,232 @@
 # RiskPatch — 게임 기획 리스크 사전 진단 도구
 
-**Supercent AI Application Engineer 과제 · 2026.04**
+Supercent AI Application Engineer 과제 · 2026.04
 조명래 · myoungrel@gmail.com · 010-5634-1615
 
-🔗 https://game-risk-patcher.vercel.app/
-💻 https://github.com/myoungrel/supercent
-🎬 https://youtu.be/d1APEtY6igY
+🔗 배포 URL: https://game-risk-patcher.vercel.app/
+💻 GitHub: https://github.com/myoungrel/supercent
+🎬 시연 영상: https://www.youtube.com/watch?v=jztrn4FL19k
 
 `Claude` `Voyage AI` `Next.js 14` `Supabase pgvector` `Tailwind CSS` `Python` `Vercel` `Claude Code`
 
 ---
 
-## 1. 오버뷰
+## Slide 1 — 표지
 
-### 문제 정의
+RiskPatch
+실제 유저 불만 기반 게임 기획안 문제점 진단
 
-하이퍼캐주얼 게임은 짧은 주기로 기획·제작·테스트가 반복되기 때문에, 기획 단계에서 유사 게임의 유저 불만 패턴을 충분히 검토하기 어렵다.
-
-| 현재 업무 방식 | 문제 |
-|------|------|
-| 유사 게임 직접 플레이하며 분석 | 시간 소모, 개인 감각에 의존 |
-| 플레이스토어 리뷰 수동 수집 | 비효율적, 정량화 불가 |
-| 경험 기반 기획 검토 | 근거 없는 판단 |
-| 출시 후 저평점 → 원인 파악 → 수정 반복 | 사후 대응, 비용 낭비 |
-
-### 해결 방법
-
-**RiskPatch** — 플레이스토어 저평점 리뷰를 RAG로 구조화하여, 게임 기획 단계에서 유사 불만 패턴을 자동 탐지하는 AI 리서치 도구.
-
-기획안을 입력하면 실제 유저 리뷰 데이터를 기반으로 잠재적 리스크를 위험도별로 정리하고, 구체적인 기획 보완 방향을 제시한다.
-
-### 데이터 규모
-
-| 항목 | 수치 |
-|------|------|
-| 수집 게임 수 | 20개 (한국 플레이스토어 기준) |
-| 수집 리뷰 수 | 3,636건 (1~2점) |
-| 전처리 후 유효 데이터 | 1,778건 (노이즈 제거 후 약 49%) |
-| 불만 유형 | 광고피로 · 조작불편 · 반복피로 · 난이도 · 보상부족 · 과금유도 · UI/UX |
+- RiskPatch
+- 조명래 · myoungrel@gmail.com · 010-5634-1615
+- 배포: https://game-risk-patcher.vercel.app/
+- GitHub: https://github.com/myoungrel/supercent
+- 시연: https://www.youtube.com/watch?v=jztrn4FL19k
 
 ---
 
-## 2. 아키텍처
+## Slide 2 — ① 문제 정의
 
-### 데이터 파이프라인 (사전 구축)
+게임 기획자가 출시 전에 겪는 문제
+유저가 싫어하는 요소, 출시 전에 미리 체크해야 함
+
+### 배경
+- 하이퍼캐주얼 게임은 기획·제작·테스트 주기가 짧음
+- 리뷰를 꼼꼼히 읽을 시간도, 데이터를 정리할 여유도 없음
+- 출시 후 저평점이 쌓이고, 같은 문제가 반복됨
+
+### 해결하려는 문제
+- 플레이스토어 리뷰에 실제 이탈 원인이 담겨 있지만 수동 수집은 비효율적
+- 반복되는 불만 요소가 기획에 반영되지 못해 출시 후 동일한 문제가 재발
+- 정량적 근거 없이 기획 품질을 판단하기 어려움
+
+### 대상 사용자
+- 하이퍼캐주얼 게임 기획자 / 퍼블리싱 담당자 / 경쟁 게임 리서치 담당자 / PM
+
+### 현재 업무 방식
+- 플레이스토어 리뷰를 수동으로 읽고 개인 경험·감각에 의존해 판단
+- 출시 후 저평점 → 원인 파악 → 수정 → 재테스트 사후 대응 반복
+
+### 주요 불편 사항
+- 리뷰 수집·분석에 과도한 시간 소모
+- 정량적 근거 없이 기획 품질 판단이 어려움
+- 이미 발생한 문제를 반복하는 비효율
+
+📸 이미지: 플레이스토어 저평점 리뷰 캡처
+
+---
+
+## Slide 3 — ② 해결 방법
+
+AI 기반 리스크 진단 서비스
+기획안을 넣으면, 유사 게임에서 실제로 나온 불만을 바탕으로 리스크를 진단함
+
+### RiskPatch란?
+- 출시된 게임들의 저평점 리뷰 1,778건을 벡터 DB에 저장
+- 새 기획안이 들어오면 유사한 불만 패턴을 자동으로 검색해 리스크 리포트를 생성
+- 기획안 전체를 단순 비교하는 게 아니라 장르·조작방식·광고구조·보상구조·난이도흐름 등 핵심 요소를 먼저 추출하고 각 요소에 맞는 불만 패턴을 검색
+
+### 핵심 기능
+- 기획안 구조화: 장르·조작방식·광고구조·보상구조·난이도흐름 자동 추출
+- Multi-query RAG 검색: 7가지 불만 유형별 쿼리를 병렬 생성 후 벡터 DB 동시 검색
+- 리뷰 노이즈 제거: 욕설·단순감정·짧은 리뷰 제거 후 핵심 불만 유형으로 구조화
+- 리스크 리포트 생성: 위험도(🔴🟡🟢) + 근거 리뷰 + 기획 보완 제안
+- 실시간 진행 표시: SSE 스트리밍으로 각 분석 단계를 실시간 반영
+
+📸 이미지: 서비스 메인 화면 스크린샷
+
+---
+
+## Slide 4 — 아키텍처
+
+시스템 아키텍처
+웹 서비스와 데이터 파이프라인이 코사인 유사도로 연결됨
+
+📊 이미지: 아키텍처 다이어그램 (웹 서비스 + 데이터 수집 파이프라인)
+
+---
+
+## Slide 5 — RAG 구조
+
+RAG 기반 검색 구조
+7개 쿼리 병렬 검색 + 코사인 유사도 + 배치 임베딩 1회 호출
+
+### 왜 RAG인가?
+- 단순 LLM 질의는 학습 데이터 기반 추측만 나옴
+- 실제 수집한 리뷰 1,778건에서 유사 사례를 직접 찾아 근거로 제시
+- 기획안 특성을 벡터로 변환 → 동일한 특성에서 발생한 불만 패턴을 의미 기반으로 매칭
+
+### RAG가 동작하는 방식
+```
+기획안 입력
+  → Claude Haiku  (핵심 요소 추출 + 7개 불만 유형별 쿼리 생성)
+  → Voyage AI     (7개 쿼리 배치 임베딩, 1회 호출)
+  → Supabase      (7개 병렬 검색 → 중복 제거 → 상위 10건)
+  → Claude Sonnet (RAG 결과 기반 리스크 리포트 생성)
+```
+
+### 기술 구성
+- 임베딩: Voyage AI voyage-3 — document/query input_type 분리, 한국어 최적화
+- 벡터 DB: Supabase pgvector — 코사인 유사도 검색, 유사도 0.6 이상 필터링
+- Multi-query: 7개 병렬 쿼리 — 광고피로 / 난이도 / 보상부족 / 조작불편 / 반복피로 / 과금유도 / UI·UX
+
+### 핵심 코드
+
+7개 쿼리 배치 임베딩 + 병렬 검색:
+```typescript
+const response = await voyageClient.embed({
+  input: queries,       // 7가지 불만 유형별 쿼리
+  model: "voyage-3",
+  inputType: "query",   // 검색용 타입 분리로 정확도 향상
+});
+const results = await Promise.allSettled(
+  embeddings.map((embedding) => searchComplaints(embedding, 8))
+);
+```
+
+Supabase 코사인 유사도 검색 (RPC):
+```sql
+create function match_complaints(
+  query_embedding vector(1024),
+  match_threshold float,
+  match_count int
+)
+returns table (id bigint, detail text, complaint_type text, similarity float)
+language sql as $$
+  select id, detail, complaint_type,
+    1 - (embedding <=> query_embedding) as similarity
+  from complaints
+  where 1 - (embedding <=> query_embedding) > match_threshold
+  order by similarity desc
+  limit match_count;
+$$;
+
+---
+
+## Slide 6 — ③ AI 도구 & ④⑤ 프로토타이핑
+
+AI 도구 구성 및 프로토타이핑
+단순 작업은 Haiku, 복잡한 판단은 Sonnet — 역할 분리로 속도·비용·품질을 동시에 확보
+
+### ③ AI 도구 구성
+- Claude Haiku (claude-haiku-4-5-20251001): 기획안 구조화 + 검색 쿼리 생성 — 단순 JSON 추출에 적합, 빠르고 저렴
+- Claude Haiku (claude-haiku-4-5-20251001): 리뷰 전처리 (노이즈 제거 + 불만 구조화) — 대량 처리에 적합
+- Claude Sonnet (claude-sonnet-4-6): 리스크 리포트 생성 — 복잡한 맥락 이해·판단이 필요한 작업에 최신 모델 활용
+- Voyage AI voyage-3: 텍스트 임베딩 (1024차원) — document/query input_type 분리 지원, 한국어 성능 우수
+- Supabase pgvector: 벡터 저장 및 유사도 검색 — PostgreSQL 확장으로 별도 벡터 DB 불필요
+- Claude Code: 전체 개발 환경 — 바이브코딩 방식으로 기획부터 배포까지 AI 협업
+
+### ④⑤ 프로토타이핑 계획 및 방법
+
+**검증 목표**
+- RAG 정확도: 기획안 특성이 실제 불만 패턴과 의미적으로 매칭되는지
+- 리포트 품질: 리뷰 근거 기반 실용적 기획 보완 제안이 나오는지
+- 파이프라인 재현성: 새 게임 데이터도 동일 흐름으로 처리 가능한지
+
+**데이터 규모**
+- 수집: 게임 20개 × 한국어 1~2점 리뷰 3,636건
+- 전처리 후: 욕설·단순감정·짧은 리뷰 제거 → 1,778건 저장
+
+**구현 단계**
+- 데이터 파이프라인: 리뷰 수집 → Haiku 전처리·구조화 → Voyage AI 임베딩 → Supabase 저장
+- RAG 시스템: match_complaints RPC + 7개 쿼리 병렬 검색 + 유사도 0.6 필터링
+- 웹앱: Next.js SSE 스트리밍 API + 단계별 실시간 진행 UI
+- 배포: Haiku·Sonnet 역할 분리 + 배치 임베딩 + Rate limiting + Vercel
+
+---
+
+## Slide 7 — 서비스 화면
+
+서비스 화면 (UI 설계)
+기획안 텍스트 입력 → SSE 실시간 분석 3단계 → 위험도별 리스크 리포트 출력
+
+📸 스크린샷 3장
+1. 기획안 입력 화면
+2. 분석 중 화면 (SSE 단계별 진행)
+3. 리스크 리포트 결과 화면
+
+---
+
+## Slide 8 — ⑥ 바이브코딩
+
+바이브코딩 개발 과정
+컨텍스트 파일로 AI를 세팅하고, 에이전트에게 역할을 나눠 개발을 지시함
+
+### 사전 준비 — 컨텍스트 파일
+
+- CLAUDE.md — 기술스택, 폴더구조, 데이터 형식, 코딩 원칙 등 프로젝트 전체 컨텍스트
+- CONTEXT_ENGINEERING.md — Stage 1(전처리) ~ Stage 4(리포트 생성) 단계별 LLM 프롬프트 설계
+- 에이전트 지시 시 이 파일들을 참고하도록 명시해 일관성 확보
+
+### 에이전트 — 역할 분리
+
+- pipeline-agent — 데이터 수집·전처리 전담 (scraper / preprocessor / embedder)
+- rag-agent — RAG 검색 시스템 구축 전담 (match_complaints RPC + multiQuerySearch)
+- frontend-agent — Next.js UI·API 전담 (SSE 스트리밍 API + 메인 UI)
+
+### 스킬 — 반복 테스트 단축
+
+- /run-pipeline — 스크래핑 → 전처리 → 임베딩 파이프라인 순서대로 실행
+- /test-rag — 샘플 기획안 3가지로 RAG 유사도·리포트 품질 확인
+- /analyze-game — 기획안 입력 → 리스크 리포트 즉시 출력
+
+### 실제 지시 흐름
 
 ```
-플레이스토어 1~2점 리뷰 스크래핑
-(20개 게임 / 3,636건)
-        ↓
-Claude Haiku — 노이즈 제거 + 불만 유형 구조화
-(욕설·단순감정 제거 → 1,778건)
-        ↓
-Voyage AI voyage-3 — 배치 임베딩 (1024차원)
-        ↓
-Supabase pgvector — 벡터 저장
+① CLAUDE.md랑 CONTEXT_ENGINEERING.md 참고해서
+  pipeline-agent한테 scraper.py, preprocessor.py, embedder.py 만들어줘.
+  플레이스토어 하이퍼캐주얼 게임 20개 1~2점 한국어 리뷰 스크래핑하고
+  Haiku로 노이즈 제거 + 7가지 불만 유형으로 구조화해줘.
+
+② CONTEXT_ENGINEERING.md Stage 3 참고해서
+  rag-agent한테 match_complaints RPC 함수 만들고
+  7가지 불만 유형별 쿼리를 병렬로 검색하는 multiQuerySearch 구현해줘.
+
+③ frontend-agent한테 route.ts SSE 스트리밍 API랑
+  page.tsx 메인 UI 만들어줘.
+  가짜 setTimeout 말고 실제 서버 진행 상황을 SSE로 전달해줘.
+
+④ /analyze-game 스킬로 테스트해보니까 유사도가 낮아.
+  기획안 구조화는 haiku로 바꾸고 임베딩도 배치로 한 번에 보내줘.
+  Rate limiting이랑 기획안 미저장 고지 추가해줘.
 ```
 
-### 사용자 워크플로우
-
-```
-기획안 텍스트 입력
-        ↓
-[Step 1] Claude Haiku
-기획안 구조화 (장르/조작방식/광고구조/보상구조/난이도)
-+ 7가지 불만 유형별 검색 쿼리 생성
-        ↓
-[Step 2] Voyage AI + Supabase pgvector
-7개 쿼리 배치 임베딩 (1번 호출)
-→ 병렬 벡터 검색 (7×8=56건)
-→ 중복 제거 → 유사도 정렬 → 상위 10건
-        ↓
-[Step 3] Claude Sonnet
-RAG 결과 기반 리스크 리포트 생성
-(위험도 + 근거 리뷰 + 기획 보완 제안)
-        ↓
-SSE 스트리밍으로 단계별 실시간 출력
-```
-
-### 기술 선택 근거
-
-| 기술 | 역할 | 선택 이유 |
-|------|------|----------|
-| Claude Haiku | 기획안 구조화 | 단순 JSON 추출 — 빠르고 저렴 |
-| Claude Sonnet | 리포트 생성 | 복잡한 맥락 판단 — 최신 모델 |
-| Claude Code | 개발 환경 | 바이브코딩으로 전체 개발 |
-| Voyage AI voyage-3 | 임베딩 | 200M 토큰 무료, 한국어 성능 우수 |
-| Supabase pgvector | 벡터 DB | 무료 플랜, PostgreSQL 확장으로 별도 DB 불필요 |
-| Next.js App Router | 프론트엔드 | SSE 스트리밍 지원, Vercel 배포 최적화 |
-| Python | 데이터 파이프라인 | 스크래핑·전처리 생태계 풍부 |
-
----
-
-## 3. 기능 설명
-
-### 기획안 입력
-- 장르, 조작방식, 광고구조, 보상구조, 난이도흐름을 자유 텍스트로 입력
-- 샘플 기획안 제공으로 즉시 테스트 가능
-- 입력된 기획안은 분석 목적으로만 사용, 별도 저장 없음 (Claude API 사용 명시)
-
-### 분석 단계 실시간 표시
-- 기획안 구조화 → 불만 패턴 검색 → 리스크 리포트 생성
-- SSE 스트리밍으로 실제 서버 진행 상황을 정확하게 반영
-- 가짜 타이머 없이 각 단계 완료 시점에 맞춰 UI 업데이트
-
-### 유사 불만 패턴 카드
-- 실제 플레이스토어 저평점 리뷰에서 추출한 유사 사례 표시
-- 불만 유형 분포 뱃지 (광고피로 · 난이도 · 보상부족 등)
-- 유사도 수치 표시, 원문 리뷰 함께 표시
-
-### 리스크 리포트
-- 위험도 높음(🔴) / 중간(🟡) / 낮음(🟢)으로 분류
-- 각 항목: 불만 유형 + 근거 리뷰 요약 + 기획 보완 제안
-- 종합 의견 + 리포트 복사 기능
-
----
-
-## 4. 배포 및 운영
-
-### 배포 구조
-
-| 항목 | 내용 |
-|------|------|
-| 프론트엔드 | Vercel (자동 배포, GitHub 연동) |
-| 벡터 DB | Supabase (PostgreSQL + pgvector) |
-| API | Next.js App Router API Route |
-| 환경변수 | Vercel 환경변수로 관리 (.env.local 미포함) |
-
-### 보안
-
-| 항목 | 현재 구현 |
-|------|----------|
-| Rate limiting | IP당 1시간 10회 제한 (로컬 개발환경 제외) |
-| 기획안 보안 고지 | 분석 목적 외 저장 없음, Claude API 사용 명시 |
-| API 키 관리 | 환경변수로만 관리, 코드 하드코딩 없음 |
-
-### 운영 비용
-
-| 항목 | 현재 (프로토타입) | 실서비스 전환 시 |
-|------|------|------|
-| Vercel | $0 (Hobby) | $20/월 (Pro) |
-| Supabase | $0 (무료) | $25/월 (Pro) |
-| Voyage AI | $0 (200M 토큰 무료) | ~$5/월 |
-| Claude API | 분석 1회 약 $0.025 | ~$10/월 (400회 기준) |
-| **합계** | **$0 고정** | **약 $60/월** |
-
----
-
-## 5. 고도화 방향
-
-### 데이터 확장
-- 크롤링 게임 수 20개 → 200개 이상
-- 정기 크롤링 자동화 (주 1회 신규 리뷰 수집)
-- 앱스토어(iOS) 및 영어권 리뷰 추가
-
-### 검색 정확도 개선
-- 불만 유형별 가중치 적용 (장르별 차별화)
-- Cross-encoder 기반 검색 결과 리랭킹
-- LangGraph 자가교정 루프 도입
-  - RAG 유사도 낮을 시 LLM이 쿼리 자동 수정 후 재검색
-  - 7가지 불만 유형 커버리지 체크 후 누락 항목 보완
-  - 전제 조건: 데이터 100개 게임 이상 확보 후 도입 권장
-
-### 기능 확장
-- 분석 히스토리 저장 및 기획안 버전별 리스크 비교
-- 팀 공유 기능 (링크로 리포트 공유)
-- PDF 리포트 다운로드
-
-### 보안 강화
-- Google OAuth / 사내 SSO 인증
-- Redis 기반 분산 Rate limiting
-- 온프레미스 LLM 옵션 검토 (기획안 외부 전송 최소화)
-
-### 슈퍼센트 특화
-- 내부 출시 게임 데이터 연동
-- 출시 후 실제 평점과 사전 리스크 예측 정확도 검증
-- 리스크 예측 모델 파인튜닝
-
----
-
-## 6. 바이브코딩 지시 내용
-
-전체 개발 과정의 AI 지시 내용은 `VIBE_CODING_LOG.md`에 자동 누적 저장됨.
-
-### 개발 흐름 요약
-
-| 단계 | 작업 내용 |
-|------|----------|
-| 1단계 | 플레이스토어 스크래핑 (20개 게임 / 3,636건) |
-| 2단계 | Claude Haiku 전처리 → 1,778건 구조화 |
-| 3단계 | Voyage AI 임베딩 → Supabase pgvector 저장 |
-| 4단계 | Next.js API Route + RAG 검색 구현 |
-| 5단계 | UI 구현 (다크 테마, 단계별 로딩, 리포트 출력) |
-| 6단계 | SSE 스트리밍, Multi-query RAG, 성능 최적화 |
-| 7단계 | Rate limiting, 보안 고지, 가시성 개선 |
-
-### 핵심 기술 결정 과정
-
-| 결정 | 이유 |
-|------|------|
-| OpenAI 임베딩 → Voyage AI 교체 | 비용 절감, 무료 200M 토큰 |
-| 단일 쿼리 → Multi-query RAG | 7가지 불만 유형 커버리지 확보 |
-| setTimeout 가짜 진행 → SSE 스트리밍 | 실제 서버 진행 상황 정확하게 반영 |
-| Claude Sonnet 전체 → Haiku(구조화) + Sonnet(리포트) | 속도 개선, 비용 효율화 |
-| 임베딩 7회 개별 호출 → 1회 배치 호출 | 네트워크 오버헤드 7분의 1로 감소 |
