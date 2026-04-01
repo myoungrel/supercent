@@ -276,7 +276,10 @@ export default function Home() {
               resize-none focus:outline-none focus:border-zinc-600 transition-colors leading-relaxed"
             disabled={isAnalyzing}
           />
-          <div className="mt-4 flex items-center justify-between">
+          <p className="mt-3 text-xs text-zinc-700">
+            입력된 기획안은 분석 후 서버에 저장되지 않습니다.
+          </p>
+          <div className="mt-3 flex items-center justify-between">
             <span className="text-xs text-zinc-700">{designDoc.length.toLocaleString()}자</span>
             <button
               onClick={handleAnalyze}

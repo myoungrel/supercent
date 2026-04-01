@@ -3,6 +3,23 @@ import Anthropic from "@anthropic-ai/sdk";
 import { VoyageAIClient } from "voyageai";
 import { searchComplaints, ComplaintResult } from "@/lib/supabase";
 
+// Rate limiting: IP당 1시간 10회
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
@@ -189,6 +206,14 @@ ${ragText}
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return new Response(JSON.stringify({ error: "요청 한도를 초과했습니다. 1시간 후 다시 시도해주세요." }), {
+      status: 429,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const body = await request.json() as { designDoc?: string };
   const { designDoc } = body;
 
