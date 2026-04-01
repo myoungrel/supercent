@@ -85,7 +85,7 @@ async function multiQuerySearch(queries: string[]): Promise<ComplaintResult[]> {
 
   // 모든 임베딩으로 병렬 검색
   const results = await Promise.allSettled(
-    embeddings.map((embedding) => searchComplaints(embedding, 5))
+    embeddings.map((embedding) => searchComplaints(embedding, 8))
   );
 
   // 결과 합치기 + detail 기준 중복 제거 + 유사도 높은 순 정렬
