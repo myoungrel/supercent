@@ -244,9 +244,20 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
             게임 기획안 리스크 분석
           </h1>
-          <p className="text-zinc-500 text-base leading-relaxed">
+          <p className="text-zinc-500 text-base leading-relaxed mb-4">
             실제 플레이스토어 저평점 리뷰 데이터를 기반으로 기획안의 잠재적 불만 요소를 사전에 탐지합니다.
           </p>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-zinc-600 border border-zinc-800 rounded-full px-3 py-1">
+              리뷰 1,778건 분석
+            </span>
+            <span className="text-xs text-zinc-600 border border-zinc-800 rounded-full px-3 py-1">
+              20개 게임
+            </span>
+            <span className="text-xs text-zinc-600 border border-zinc-800 rounded-full px-3 py-1">
+              7가지 불만 유형
+            </span>
+          </div>
         </div>
 
         {/* 입력 섹션 */}
@@ -348,9 +359,23 @@ export default function Home() {
             {/* RAG 결과 */}
             {result.ragResults && result.ragResults.length > 0 && (
               <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
-                <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest mb-4">
-                  유사 불만 패턴 · {result.ragResults.length}건
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest">
+                    유사 불만 패턴 · {result.ragResults.length}건
+                  </h2>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {Object.entries(
+                      result.ragResults.reduce<Record<string, number>>((acc, r) => {
+                        acc[r.complaint_type] = (acc[r.complaint_type] ?? 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([type, count]) => (
+                      <span key={type} className="text-xs text-amber-400 border border-amber-400/20 bg-amber-400/5 rounded-full px-2.5 py-0.5">
+                        {type} {count}
+                      </span>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {result.ragResults.map((r, i) => (
                     <RagResultCard key={i} result={r} />
