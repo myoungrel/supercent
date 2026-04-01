@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
         const embedding = await embedQuery(features.search_query);
         let ragResults: ComplaintResult[] = [];
         try {
-          ragResults = await searchComplaints(embedding, 5);
+          ragResults = await searchComplaints(embedding, 15);
         } catch {
           ragResults = [];
         }

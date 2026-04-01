@@ -374,7 +374,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {result.ragResults.map((r, i) => (
+                  {result.ragResults.slice(0, 5).map((r, i) => (
                     <RagResultCard key={i} result={r} />
                   ))}
                 </div>
