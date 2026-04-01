@@ -248,13 +248,13 @@ export default function Home() {
             실제 플레이스토어 저평점 리뷰 데이터를 기반으로 기획안의 잠재적 불만 요소를 사전에 탐지합니다.
           </p>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-600 border border-zinc-800 rounded-full px-3 py-1">
+            <span className="text-xs text-zinc-300 border border-zinc-600 rounded-full px-3 py-1">
               리뷰 1,778건 분석
             </span>
-            <span className="text-xs text-zinc-600 border border-zinc-800 rounded-full px-3 py-1">
+            <span className="text-xs text-zinc-300 border border-zinc-600 rounded-full px-3 py-1">
               20개 게임
             </span>
-            <span className="text-xs text-zinc-600 border border-zinc-800 rounded-full px-3 py-1">
+            <span className="text-xs text-zinc-300 border border-zinc-600 rounded-full px-3 py-1">
               7가지 불만 유형
             </span>
           </div>
