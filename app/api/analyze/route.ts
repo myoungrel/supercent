@@ -81,28 +81,19 @@ ${designDoc}`;
   }
 }
 
-async function embedQuery(query: string): Promise<number[]> {
+
+async function multiQuerySearch(queries: string[]): Promise<ComplaintResult[]> {
+  // 7개 쿼리를 1번 배치 호출로 임베딩
   const response = await voyageClient.embed({
-    input: query,
+    input: queries,
     model: "voyage-3",
     inputType: "query",
   });
+  const embeddings = queries.map((_, i) => response.data?.[i]?.embedding ?? []);
 
-  const embedding = response.data?.[0]?.embedding;
-  if (!embedding) {
-    throw new Error("Voyage AI 임베딩 생성 실패");
-  }
-
-  return embedding;
-}
-
-async function multiQuerySearch(queries: string[]): Promise<ComplaintResult[]> {
-  // 모든 쿼리를 병렬로 임베딩 + 검색
+  // 모든 임베딩으로 병렬 검색
   const results = await Promise.allSettled(
-    queries.map(async (query) => {
-      const embedding = await embedQuery(query);
-      return searchComplaints(embedding, 10);
-    })
+    embeddings.map((embedding) => searchComplaints(embedding, 10))
   );
 
   // 결과 합치기 + detail 기준 중복 제거 + 유사도 높은 순 정렬
