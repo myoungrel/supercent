@@ -207,7 +207,8 @@ ${ragText}
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (!checkRateLimit(ip)) {
+  const isDev = process.env.NODE_ENV === "development";
+  if (!isDev && !checkRateLimit(ip)) {
     return new Response(JSON.stringify({ error: "요청 한도를 초과했습니다. 1시간 후 다시 시도해주세요." }), {
       status: 429,
       headers: { "Content-Type": "application/json" },
