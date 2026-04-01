@@ -23,7 +23,7 @@ export interface GameFeatures {
   ad_structure: string;
   reward_structure: string;
   difficulty: string;
-  search_query: string;
+  search_queries: string[];
 }
 
 async function extractGameFeatures(designDoc: string): Promise<GameFeatures> {
@@ -44,7 +44,12 @@ async function extractGameFeatures(designDoc: string): Promise<GameFeatures> {
   "ad_structure": "광고구조 설명",
   "reward_structure": "보상구조 설명",
   "difficulty": "난이도 흐름 설명",
-  "search_query": "이 기획안의 요소들로 인해 유저가 실제로 남길 법한 불만 리뷰 문장 (유저 말투로, 구체적인 불만 상황 중심으로 작성)"
+  "search_queries": [
+    "광고 구조로 인해 유저가 실제로 남길 법한 불만 리뷰 문장 (유저 말투)",
+    "난이도 흐름으로 인해 유저가 실제로 남길 법한 불만 리뷰 문장 (유저 말투)",
+    "보상 구조로 인해 유저가 실제로 남길 법한 불만 리뷰 문장 (유저 말투)",
+    "조작방식으로 인해 유저가 실제로 남길 법한 불만 리뷰 문장 (유저 말투)"
+  ]
 }
 
 기획안:
@@ -86,6 +91,34 @@ async function embedQuery(query: string): Promise<number[]> {
   }
 
   return embedding;
+}
+
+async function multiQuerySearch(queries: string[]): Promise<ComplaintResult[]> {
+  // 모든 쿼리를 병렬로 임베딩 + 검색
+  const results = await Promise.allSettled(
+    queries.map(async (query) => {
+      const embedding = await embedQuery(query);
+      return searchComplaints(embedding, 10);
+    })
+  );
+
+  // 결과 합치기 + detail 기준 중복 제거 + 유사도 높은 순 정렬
+  const merged: ComplaintResult[] = [];
+  const seen = new Set<string>();
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      for (const item of result.value) {
+        if (!seen.has(item.detail)) {
+          seen.add(item.detail);
+          merged.push(item);
+        }
+      }
+    }
+  }
+
+  merged.sort((a, b) => b.similarity - a.similarity);
+  return merged.slice(0, 15);
 }
 
 async function generateRiskReport(
@@ -200,30 +233,23 @@ export async function POST(request: NextRequest) {
         const features = await extractGameFeatures(designDoc.trim());
         send("step", { step: 1, status: "done" });
 
-        // Step 2: 임베딩 + RAG 검색
+        // Step 2: Multi-query 병렬 임베딩 + RAG 검색
         send("step", { step: 2, status: "loading" });
-        const embedding = await embedQuery(features.search_query);
         let ragResults: ComplaintResult[] = [];
         try {
-          const raw = await searchComplaints(embedding, 30);
-          const seen = new Set<string>();
-          ragResults = raw.filter((r) => {
-            if (seen.has(r.detail)) return false;
-            seen.add(r.detail);
-            return true;
-          }).slice(0, 15);
+          ragResults = await multiQuerySearch(features.search_queries);
         } catch {
           ragResults = [];
         }
         send("step", { step: 2, status: "done" });
-        send("rag", ragResults);
+        send("rag", ragResults.slice(0, 5));
 
         // Step 3: 리포트 생성
         send("step", { step: 3, status: "loading" });
         const report = await generateRiskReport(designDoc.trim(), features, ragResults);
         send("step", { step: 3, status: "done" });
 
-        send("result", { features, ragResults, report });
+        send("result", { features, ragResults: ragResults.slice(0, 5), report });
       } catch (err) {
         send("error", { message: err instanceof Error ? err.message : "서버 오류" });
       } finally {
