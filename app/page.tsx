@@ -84,22 +84,22 @@ function parseReportSections(report: string) {
 
 function RagResultCard({ result }: { result: ComplaintResult }) {
   return (
-    <div className="border border-zinc-800 bg-zinc-900 rounded-xl p-4 hover:border-zinc-600 transition-colors">
+    <div className="border border-zinc-700 bg-zinc-900 rounded-xl p-4 hover:border-zinc-500 transition-colors">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-amber-400 tracking-widest uppercase">
           {result.complaint_type}
         </span>
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-zinc-400">
           {(result.similarity * 100).toFixed(1)}% 유사
         </span>
       </div>
-      <p className="text-sm text-zinc-300 leading-relaxed">{result.detail}</p>
+      <p className="text-sm text-zinc-200 leading-relaxed">{result.detail}</p>
       {result.original_review && (
-        <p className="mt-3 text-xs text-zinc-500 italic border-l-2 border-zinc-700 pl-3 leading-relaxed">
+        <p className="mt-3 text-xs text-zinc-400 italic border-l-2 border-zinc-600 pl-3 leading-relaxed">
           {result.original_review}
         </p>
       )}
-      <p className="mt-3 text-xs text-zinc-600">{result.game}</p>
+      <p className="mt-3 text-xs text-zinc-500">{result.game}</p>
     </div>
   );
 }
@@ -114,7 +114,7 @@ function RiskSection({
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="border border-zinc-800 rounded-xl p-5">
+    <div className="border border-zinc-700 rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <span className={`h-2 w-2 rounded-full ${dot}`} />
         <h3 className={`text-sm font-semibold tracking-wide ${textColor}`}>
@@ -123,7 +123,7 @@ function RiskSection({
       </div>
       <div className="space-y-4">
         {items.map((item, i) => (
-          <p key={i} className="text-sm text-zinc-400 whitespace-pre-wrap leading-relaxed">
+          <p key={i} className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
             {item}
           </p>
         ))}
@@ -134,9 +134,9 @@ function RiskSection({
 
 function FeatureBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-zinc-800 rounded-lg px-4 py-3">
-      <p className="text-xs text-zinc-600 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-sm text-zinc-200 font-medium truncate" title={value}>{value}</p>
+    <div className="border border-zinc-700 rounded-lg px-4 py-3">
+      <p className="text-xs text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-sm text-zinc-100 font-medium truncate" title={value}>{value}</p>
     </div>
   );
 }
@@ -224,16 +224,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* 헤더 */}
-      <header className="border-b border-zinc-900 sticky top-0 z-10 bg-black/90 backdrop-blur-sm">
+      <header className="border-b border-zinc-800 sticky top-0 z-10 bg-black/90 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-amber-400 font-bold text-lg tracking-tight">RiskPatch</span>
-            <span className="text-zinc-700 text-sm">|</span>
-            <span className="text-zinc-500 text-sm">게임 기획 리스크 진단</span>
+            <span className="text-zinc-600 text-sm">|</span>
+            <span className="text-zinc-400 text-sm">게임 기획 리스크 진단</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-zinc-600">RAG 연결됨</span>
+            <span className="text-xs text-zinc-400">RAG 연결됨</span>
           </div>
         </div>
       </header>
@@ -244,7 +244,7 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
             게임 기획안 리스크 분석
           </h1>
-          <p className="text-zinc-500 text-base leading-relaxed mb-4">
+          <p className="text-zinc-400 text-base leading-relaxed mb-4">
             실제 플레이스토어 저평점 리뷰 데이터를 기반으로 기획안의 잠재적 불만 요소를 사전에 탐지합니다.
           </p>
           <div className="flex items-center gap-3">
@@ -260,10 +260,10 @@ export default function Home() {
         {/* 입력 섹션 */}
         <div className="border border-zinc-800 rounded-2xl p-6 bg-zinc-950">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-widest">기획안 입력</h2>
+            <h2 className="text-sm font-medium text-zinc-300 uppercase tracking-widest">기획안 입력</h2>
             <button
               onClick={() => setDesignDoc(SAMPLE_DESIGN_DOC)}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
             >
               샘플 불러오기 →
             </button>
@@ -272,20 +272,20 @@ export default function Home() {
             value={designDoc}
             onChange={(e) => setDesignDoc(e.target.value)}
             placeholder="장르, 조작방식, 광고 구조, 보상 체계, 난이도 흐름 등을 포함하면 더 정확한 분석이 가능합니다."
-            className="w-full h-48 bg-black border border-zinc-800 rounded-xl p-4 text-sm text-zinc-300 placeholder-zinc-700
-              resize-none focus:outline-none focus:border-zinc-600 transition-colors leading-relaxed"
+            className="w-full h-48 bg-black border border-zinc-700 rounded-xl p-4 text-sm text-zinc-200 placeholder-zinc-600
+              resize-none focus:outline-none focus:border-zinc-500 transition-colors leading-relaxed"
             disabled={isAnalyzing}
           />
-          <p className="mt-3 text-xs text-zinc-700">
+          <p className="mt-3 text-xs text-zinc-500">
             입력된 기획안은 분석 목적으로만 사용되며 별도 저장되지 않습니다. 분석에는 Claude API(Anthropic)가 사용됩니다.
           </p>
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-zinc-700">{designDoc.length.toLocaleString()}자</span>
+            <span className="text-xs text-zinc-500">{designDoc.length.toLocaleString()}자</span>
             <button
               onClick={handleAnalyze}
               disabled={isAnalyzing || !designDoc.trim()}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-amber-400 text-black text-sm font-semibold
-                hover:bg-amber-300 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed
+                hover:bg-amber-300 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed
                 transition-all active:scale-95"
             >
               {isAnalyzing ? (
@@ -306,22 +306,22 @@ export default function Home() {
             <div className="flex items-center gap-8">
               {steps.map((step, i) => (
                 <div key={step.id} className="flex items-center gap-3">
-                  {i > 0 && <span className="text-zinc-800 text-xs">—</span>}
+                  {i > 0 && <span className="text-zinc-600 text-xs">—</span>}
                   <div className="flex items-center gap-2">
                     {step.status === "done" ? (
                       <span className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center text-xs text-white">✓</span>
                     ) : step.status === "loading" ? (
-                      <span className="h-4 w-4 rounded-full border-2 border-black border-t-transparent animate-spin block" />
+                      <span className="h-4 w-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin block" />
                     ) : step.status === "error" ? (
                       <span className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">✕</span>
                     ) : (
-                      <span className="h-4 w-4 rounded-full border border-zinc-700" />
+                      <span className="h-4 w-4 rounded-full border border-zinc-600" />
                     )}
                     <span className={`text-xs ${
                       step.status === "done" ? "text-emerald-400"
                       : step.status === "loading" ? "text-amber-400"
                       : step.status === "error" ? "text-red-400"
-                      : "text-zinc-700"
+                      : "text-zinc-500"
                     }`}>
                       {step.label}
                     </span>
@@ -345,7 +345,7 @@ export default function Home() {
             {/* 기획 특성 */}
             {features && (
               <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
-                <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest mb-4">분석된 기획 특성</h2>
+                <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-widest mb-4">분석된 기획 특성</h2>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <FeatureBadge label="장르" value={features.genre} />
                   <FeatureBadge label="조작방식" value={features.control} />
@@ -360,7 +360,7 @@ export default function Home() {
             {result.ragResults && result.ragResults.length > 0 && (
               <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest">
+                  <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-widest">
                     유사 불만 패턴 · {result.ragResults.length}건
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -387,10 +387,10 @@ export default function Home() {
             {/* 리스크 리포트 */}
             <div className="border border-zinc-800 rounded-2xl p-5 bg-zinc-950">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-xs font-medium text-zinc-600 uppercase tracking-widest">리스크 리포트</h2>
+                <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-widest">리스크 리포트</h2>
                 <button
                   onClick={handleCopy}
-                  className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors"
+                  className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   {copied ? "복사됨 ✓" : "복사"}
                 </button>
@@ -402,9 +402,9 @@ export default function Home() {
               </div>
 
               {reportSections.summary && (
-                <div className="mt-5 pt-5 border-t border-zinc-800">
-                  <h3 className="text-xs font-medium text-zinc-600 uppercase tracking-widest mb-3">종합 의견</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">
+                <div className="mt-5 pt-5 border-t border-zinc-700">
+                  <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-widest mb-3">종합 의견</h3>
+                  <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
                     {reportSections.summary}
                   </p>
                 </div>
@@ -412,7 +412,7 @@ export default function Home() {
 
               {!reportSections.high.length && !reportSections.medium.length &&
                !reportSections.low.length && !reportSections.summary && (
-                <pre className="text-sm text-zinc-400 whitespace-pre-wrap leading-relaxed font-sans">
+                <pre className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed font-sans">
                   {result.report}
                 </pre>
               )}
@@ -421,8 +421,8 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-zinc-900 mt-20 py-6 text-center">
-        <p className="text-xs text-zinc-800">RiskPatch · Supercent AI Application Engineer</p>
+      <footer className="border-t border-zinc-800 mt-20 py-6 text-center">
+        <p className="text-xs text-zinc-500">RiskPatch · Supercent AI Application Engineer</p>
       </footer>
     </div>
   );
