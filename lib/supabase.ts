@@ -26,7 +26,7 @@ export async function searchComplaints(
 ): Promise<ComplaintResult[]> {
   const { data, error } = await supabase.rpc("match_complaints", {
     query_embedding: queryEmbedding,
-    match_threshold: 0.5,
+    match_threshold: 0.6,
     match_count: limit,
   });
 

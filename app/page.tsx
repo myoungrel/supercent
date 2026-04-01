@@ -254,9 +254,6 @@ export default function Home() {
             <span className="text-xs text-zinc-300 border border-zinc-600 rounded-full px-3 py-1">
               20개 게임
             </span>
-            <span className="text-xs text-zinc-300 border border-zinc-600 rounded-full px-3 py-1">
-              7가지 불만 유형
-            </span>
           </div>
         </div>
 
