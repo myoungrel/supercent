@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { VoyageAIClient } from "voyageai";
 import { searchComplaints, ComplaintResult } from "@/lib/supabase";
@@ -11,6 +11,12 @@ const voyageClient = new VoyageAIClient({
   apiKey: process.env.VOYAGE_API_KEY!,
 });
 
+export interface AnalyzeResponse {
+  features: GameFeatures;
+  ragResults: ComplaintResult[];
+  report: string;
+}
+
 export interface GameFeatures {
   genre: string;
   control: string;
@@ -20,13 +26,6 @@ export interface GameFeatures {
   search_query: string;
 }
 
-export interface AnalyzeResponse {
-  features: GameFeatures;
-  ragResults: ComplaintResult[];
-  report: string;
-}
-
-// Stage 2: 기획안 핵심 요소 추출 (CONTEXT_ENGINEERING.md Stage 2 프롬프트)
 async function extractGameFeatures(designDoc: string): Promise<GameFeatures> {
   const prompt = `당신은 하이퍼캐주얼 게임 기획 전문가입니다.
 아래 게임 기획안에서 유저 불만과 관련될 수 있는 핵심 요소를 추출하세요.
@@ -60,7 +59,6 @@ ${designDoc}`;
   const rawText =
     message.content[0].type === "text" ? message.content[0].text : "";
 
-  // JSON 블록 추출 (마크다운 코드블록 대응)
   const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/) ||
     rawText.match(/(\{[\s\S]*\})/);
 
@@ -75,7 +73,6 @@ ${designDoc}`;
   }
 }
 
-// Stage 3: Voyage AI voyage-3으로 임베딩 생성 (1024차원)
 async function embedQuery(query: string): Promise<number[]> {
   const response = await voyageClient.embed({
     input: query,
@@ -90,7 +87,6 @@ async function embedQuery(query: string): Promise<number[]> {
   return embedding;
 }
 
-// Stage 4: 리스크 리포트 생성 (CONTEXT_ENGINEERING.md Stage 4 프롬프트)
 async function generateRiskReport(
   designDoc: string,
   features: GameFeatures,
@@ -157,85 +153,83 @@ ${ragText}
 기획안:
 ${designDoc}`;
 
-  const message = await anthropic.messages.create({
+  const stream = anthropic.messages.stream({
     model: "claude-sonnet-4-6",
     max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
   });
 
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  let fullText = "";
+  for await (const chunk of stream) {
+    if (
+      chunk.type === "content_block_delta" &&
+      chunk.delta.type === "text_delta"
+    ) {
+      fullText += chunk.delta.text;
+    }
+  }
+
+  return fullText;
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json() as { designDoc?: string };
-    const { designDoc } = body;
+  const body = await request.json() as { designDoc?: string };
+  const { designDoc } = body;
 
-    if (!designDoc || typeof designDoc !== "string" || designDoc.trim() === "") {
-      return NextResponse.json(
-        { error: "기획안 텍스트(designDoc)가 필요합니다." },
-        { status: 400 }
-      );
-    }
-
-    // Step 1: 기획안 핵심 요소 추출 (Claude sonnet-4-6)
-    let features: GameFeatures;
-    try {
-      features = await extractGameFeatures(designDoc.trim());
-    } catch (err) {
-      console.error("Feature extraction error:", err);
-      return NextResponse.json(
-        { error: "기획안 구조화 중 오류가 발생했습니다." },
-        { status: 500 }
-      );
-    }
-
-    // Step 2: search_query를 Voyage AI voyage-3으로 임베딩 (1024차원)
-    let embedding: number[];
-    try {
-      embedding = await embedQuery(features.search_query);
-    } catch (err) {
-      console.error("Embedding error:", err);
-      return NextResponse.json(
-        { error: "임베딩 생성 중 오류가 발생했습니다." },
-        { status: 500 }
-      );
-    }
-
-    // Step 3: Supabase match_complaints로 유사 불만 패턴 Top 5 검색
-    let ragResults: ComplaintResult[] = [];
-    try {
-      ragResults = await searchComplaints(embedding, 5);
-    } catch (err) {
-      console.error("RAG search error:", err);
-      // 검색 실패 시 빈 배열로 진행 (리포트는 생성 가능)
-      ragResults = [];
-    }
-
-    // Step 4: 리스크 리포트 생성 (Claude sonnet-4-6)
-    let report: string;
-    try {
-      report = await generateRiskReport(designDoc.trim(), features, ragResults);
-    } catch (err) {
-      console.error("Report generation error:", err);
-      return NextResponse.json(
-        { error: "리스크 리포트 생성 중 오류가 발생했습니다." },
-        { status: 500 }
-      );
-    }
-
-    const response: AnalyzeResponse = {
-      features,
-      ragResults,
-      report,
-    };
-
-    return NextResponse.json(response, { status: 200 });
-  } catch (err) {
-    console.error("Unexpected error in /api/analyze:", err);
-    return NextResponse.json(
-      { error: "서버 내부 오류가 발생했습니다." },
-      { status: 500 }
-    );
+  if (!designDoc || typeof designDoc !== "string" || designDoc.trim() === "") {
+    return new Response(JSON.stringify({ error: "기획안 텍스트(designDoc)가 필요합니다." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
+
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, data: unknown) => {
+        controller.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+        );
+      };
+
+      try {
+        // Step 1: 기획안 구조화
+        send("step", { step: 1, status: "loading" });
+        const features = await extractGameFeatures(designDoc.trim());
+        send("step", { step: 1, status: "done" });
+
+        // Step 2: 임베딩 + RAG 검색
+        send("step", { step: 2, status: "loading" });
+        const embedding = await embedQuery(features.search_query);
+        let ragResults: ComplaintResult[] = [];
+        try {
+          ragResults = await searchComplaints(embedding, 5);
+        } catch {
+          ragResults = [];
+        }
+        send("step", { step: 2, status: "done" });
+        send("rag", ragResults);
+
+        // Step 3: 리포트 생성
+        send("step", { step: 3, status: "loading" });
+        const report = await generateRiskReport(designDoc.trim(), features, ragResults);
+        send("step", { step: 3, status: "done" });
+
+        send("result", { features, ragResults, report });
+      } catch (err) {
+        send("error", { message: err instanceof Error ? err.message : "서버 오류" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
 }

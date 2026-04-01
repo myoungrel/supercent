@@ -160,29 +160,46 @@ export default function Home() {
     setError(null);
     setResult(null);
     resetSteps();
-    updateStep(1, "loading");
 
     try {
-      const t1 = setTimeout(() => { updateStep(1, "done"); updateStep(2, "loading"); }, 1200);
-      const t2 = setTimeout(() => { updateStep(2, "done"); updateStep(3, "loading"); }, 3000);
-
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ designDoc: designDoc.trim() }),
       });
 
-      clearTimeout(t1);
-      clearTimeout(t2);
-
-      if (!response.ok) {
+      if (!response.ok || !response.body) {
         const errData = (await response.json()) as { error?: string };
         throw new Error(errData.error ?? "분석 요청 실패");
       }
 
-      const data = (await response.json()) as AnalyzeResponse;
-      setSteps(INITIAL_STEPS.map((s) => ({ ...s, status: "done" as StepStatus })));
-      setResult(data);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          const eventMatch = part.match(/^event: (\w+)\ndata: ([\s\S]+)$/);
+          if (!eventMatch) continue;
+          const [, event, dataStr] = eventMatch;
+          const data = JSON.parse(dataStr);
+
+          if (event === "step") {
+            updateStep(data.step, data.status as StepStatus);
+          } else if (event === "result") {
+            setResult(data as AnalyzeResponse);
+          } else if (event === "error") {
+            throw new Error(data.message ?? "서버 오류");
+          }
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "알 수 없는 오류";
       setError(message);
