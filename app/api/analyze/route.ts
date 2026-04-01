@@ -77,6 +77,7 @@ async function embedQuery(query: string): Promise<number[]> {
   const response = await voyageClient.embed({
     input: query,
     model: "voyage-3",
+    inputType: "query",
   });
 
   const embedding = response.data?.[0]?.embedding;
